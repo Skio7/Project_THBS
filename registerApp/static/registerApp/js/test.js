@@ -20,18 +20,23 @@ const extractThumbnail = ({ imageLinks }) => {
 
 
 const drawChartBook = async (subject, startIndex = 0) => {
-  const cbookContainer = document.querySelector(`.${subject}`);
+  let cbookContainer = document.querySelector(`.${subject}`);
   cbookContainer.innerHTML = `<div class='prompt'><div class="loader"></div></div>`;
+  const cdata = await getBooks(
+    `subject:${subject}&startIndex=${startIndex}&maxResults=10`
+  );
 
-  try {
-    const cdata = await getBooks(`subject:${subject}&startIndex=${startIndex}&maxResults=10`);
+  console.log('API Response:', cdata);
 
-    if (!cdata || cdata.error || cdata.totalItems === undefined || cdata.totalItems === 0 || !cdata.items || cdata.items.length === 0) {
-      const message = !cdata ? 'Network problem!' : (cdata.error ? 'Limit exceeded! Try after some time' : 'No results, try a different term');
-      cbookContainer.innerHTML = `<div class='prompt'>ツ ${message}</div>`;
-      return;
-    }
-
+  if (cdata.error) {
+    cbookContainer.innerHTML = `<div class='prompt'>ツ Limit exceeded! Try after some time</div>`;
+  } else if (cdata.totalItems == 0) {
+    cbookContainer.innerHTML = `<div class='prompt'>ツ No results, try a different term!</div>`;
+  } else if (cdata.totalItems == undefined) {
+    cbookContainer.innerHTML = `<div class='prompt'>ツ Network problem!</div>`;
+  } else if (!cdata.items || cdata.items.length == 0) {
+    cbookContainer.innerHTML = `<div class='prompt'>ツ There is no more result!</div>`;
+  } else {
     cbookContainer.innerHTML = cdata.items
       .map(({ volumeInfo, id }) => {
         const bookId = encodeURIComponent(id || `${volumeInfo.title}-${volumeInfo.authors.join('-')}`);
@@ -49,26 +54,27 @@ const drawChartBook = async (subject, startIndex = 0) => {
         </div>`;
       })
       .join("");
-  } catch (error) {
-    cbookContainer.innerHTML = `<div class='prompt'>ツ An error occurred while fetching data</div>`;
   }
 };
 
+// Replace the viewBook function with the following code
 const viewBook = (bookId) => {
   console.log('Viewing book with ID:', bookId);
   window.open(`/book/${bookId}/`, '_blank');
 };
 
+// Add this function to handle closing the modal
 const closeModal = () => {
   const modal = document.getElementById('bookModal');
   modal.style.display = 'none';
 };
 
+// Update the viewBookModal function to use the closeModal function
 const viewBookModal = (volumeInfo) => {
   console.log('Viewing book modal:', volumeInfo);
 
   const modal = document.getElementById('bookModal');
-  modal.innerHTML = '';
+  modal.innerHTML = ''; // Clear the modal content
   const viewerContainer = document.createElement('div');
   viewerContainer.id = 'viewerContainer';
   modal.appendChild(viewerContainer);
@@ -77,30 +83,31 @@ const viewBookModal = (volumeInfo) => {
   const bookId = encodeURIComponent(volumeInfo.id || "undefined");
   viewer.load(bookId);
 
+  // Show the modal
   modal.style.display = 'block';
 
+  // Add an event listener to close the modal when clicking outside the viewerContainer
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
       closeModal();
     }
   });
 };
-const drawListBook = async () => {
-  const searchTerm = searchBooks.value.trim();
 
-  if (searchTerm !== "") {
+
+const drawListBook = async () => {
+  if (searchBooks.value.trim() !== "") {
     bookContainer.style.display = "flex";
     bookContainer.innerHTML = `<div class='prompt'><div class="loader"></div></div>`;
+    const data = await getBooks(`${searchBooks.value}&maxResults=6`);
 
-    try {
-      const data = await getBooks(`${searchTerm}&maxResults=6`);
-
-      if (!data || data.error || data.totalItems === undefined || data.totalItems === 0) {
-        const message = !data ? 'Network problem!' : (data.error ? 'Limit exceeded! Try after some time' : 'No results, try a different term');
-        bookContainer.innerHTML = `<div class='prompt'>ツ ${message}</div>`;
-        return;
-      }
-
+    if (data.error) {
+      bookContainer.innerHTML = `<div class='prompt'>ツ Limit exceeded! Try after some time</div>`;
+    } else if (data.totalItems == 0) {
+      bookContainer.innerHTML = `<div class='prompt'>ツ No results, try a different term!</div>`;
+    } else if (data.totalItems == undefined) {
+      bookContainer.innerHTML = `<div class='prompt'>ツ Network problem!</div>`;
+    } else {
       bookContainer.innerHTML = data.items
         .map(({ volumeInfo }) => {
           const bookId = encodeURIComponent(volumeInfo.id || "undefined");
@@ -114,22 +121,15 @@ const drawListBook = async () => {
               <div class='info' style='background-color: ${getRandomColor()};'>
                 ${volumeInfo.categories === undefined ? "Others" : volumeInfo.categories}
               </div>
-              <div class='actions'>
-                <button onclick='handleReadlistButtonClick("${volumeInfo.title}", "${volumeInfo.authors}", "${volumeInfo.previewLink}", "${extractThumbnail(volumeInfo)}")'>Readlist</button>
-                <button onclick='handleFavouritesButtonClick("${volumeInfo.title}", "${volumeInfo.authors}", "${volumeInfo.previewLink}", "${extractThumbnail(volumeInfo)}")'>Favourites</button>
-              </div>
             </div>
           </div>`;
         })
         .join("");
-    } catch (error) {
-      bookContainer.innerHTML = `<div class='prompt'>ツ An error occurred while fetching data</div>`;
     }
   } else {
     bookContainer.style.display = "none";
   }
 };
-
 
 
 const addToReadlist = async (title, authors, previewLink, thumbnail) => {

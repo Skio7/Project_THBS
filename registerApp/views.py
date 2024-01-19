@@ -225,8 +225,10 @@ def index(request):
     return render(request, 'registerApp/index.html')
 
 @login_required
-def book_detail(request, isbn):
-    return render(request, 'bookstore/book.html', {'isbn': isbn})
+def book_detail(request, book_id):
+    context = {'book_id': book_id}
+    #print(book_id)
+    return render(request, 'registerApp/book.html', context)
 
 
 # @login_required

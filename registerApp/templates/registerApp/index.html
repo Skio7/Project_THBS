@@ -74,6 +74,7 @@
       rel="stylesheet"
     />
     <!-- Scripts -->
+    <script id="google-books-api-script" type="text/javascript" src="https://www.google.com/books/api.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", function () {
@@ -1090,6 +1091,10 @@
         </div>
       </div>
     </main>
+    <!-- Add this at the end of your body -->
+      <div id="bookModal" class="modal">
+        <!-- The modal content will be added dynamically by JavaScript -->
+      </div>
     <script src="{% static 'registerApp/js/index.js' %}"></script>
   </body>
 </html>
